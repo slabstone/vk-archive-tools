@@ -13,7 +13,7 @@ You may need to install `zlib1g-dev` for `nokogiri`:
     
 ## Usage
 
-    $ `download-attachments.rb <peer-id>`
+    $ download-attachments.rb <peer-id>
     
 Archive root dir is expected at `./Archive`, images are downloaded to `./download/<peer-id>/`.
 
