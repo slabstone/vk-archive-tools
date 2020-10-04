@@ -5,6 +5,7 @@
 require 'nokogiri'
 require 'http'
 require 'colorize'
+require_relative 'filename_helpers'
 
 def help
   abort 'usage: <peer-id>'
@@ -15,20 +16,24 @@ help if ARGV.empty? || ARGV.include?('--help')
 peer_id = ARGV[0]
 abort "invalid id: #{peer_id}".red if peer_id.to_i.zero?
 
+path_to_archive = 'Archive'
+path_to_messages = "#{path_to_archive}/messages"
+
+File.open("#{path_to_messages}/index-messages.html") do |file|
+  html = Nokogiri::HTML(file)
+  html.css('div[class=message-peer--id]').each do |div|
+    peer_link = div.css('a').first
+    break puts "peer name: #{peer_link.text}" if peer_link['href'].include?(peer_id)
+  end
+end
+
 allowed_attachment_descriptions = ['Фотография']
 
-puts "reading peer id: #{peer_id}"
-path_to_archive = "Archive/messages/#{peer_id}"
-peer_name = nil
-Dir.children(path_to_archive).sort_by { |s| s.scan(/\d+/).first.to_i }.each do |filename|
-  puts "reading file: #{filename}"
-  File.open("#{path_to_archive}/#{filename}") do |file|
+path_to_peer = "#{path_to_messages}/#{peer_id}"
+Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename|
+  puts "reading page #{filename_to_page(filename)} (messages: #{filename_to_message_numbers(filename)})"
+  File.open("#{path_to_peer}/#{filename}") do |file|
     html = Nokogiri::HTML(file)
-    unless peer_name
-      peer_name = html.css('div[class=ui_crumb]').text
-      puts "peer name: #{peer_name}"
-    end
-
     html.css('div[class=attachment]').each do |div|
       description = div.css('div[class=attachment__description]')[0].text
       next puts "skipping #{description}".yellow unless allowed_attachment_descriptions.include?(description)
