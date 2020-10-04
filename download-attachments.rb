@@ -25,13 +25,19 @@ dry_run = ARGV.include?('--dry-run')
 path_to_archive = 'Archive'
 path_to_messages = "#{path_to_archive}/messages"
 
+peer_name = nil
 File.open("#{path_to_messages}/index-messages.html") do |file|
   html = Nokogiri::HTML(file)
   html.css('div[class=message-peer--id]').each do |div|
     peer_link = div.css('a').first
-    break puts "peer name: #{peer_link.text}" if peer_link['href'].include?(peer_id)
+
+    if peer_link['href'].include?(peer_id)
+      peer_name = peer_link.text
+      break puts "peer name: #{peer_name}"
+    end
   end
 end
+abort "failed to determine peer name for #{peer_id}".red unless peer_name
 
 allowed_attachment_descriptions = ['Фотография']
 
@@ -60,7 +66,7 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
       response = HTTP.get(link)
       if response.status.success?
         downloaded_filename = link.split('/').last
-        download_dir = "download/#{peer_id}"
+        download_dir = "download/#{peer_id} #{peer_name}"
         FileUtils.mkdir_p(download_dir)
         File.open("#{download_dir}/#{downloaded_filename}", 'w') do |downloaded_file|
           downloaded_file.write(response.body)
