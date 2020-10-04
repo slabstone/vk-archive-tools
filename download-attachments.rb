@@ -15,18 +15,19 @@ help if ARGV.empty? || ARGV.include?('--help')
 peer_id = ARGV[0]
 abort "invalid id: #{peer_id}".red if peer_id.to_i.zero?
 
-input_encoding = 'Windows-1251'
-output_encoding = 'UTF-8'
 allowed_attachment_descriptions = ['Фотография']
 
 puts "reading peer id: #{peer_id}"
 path_to_archive = "Archive/messages/#{peer_id}"
+peer_name = nil
 Dir.children(path_to_archive).sort_by { |s| s.scan(/\d+/).first.to_i }.each do |filename|
   puts "reading file: #{filename}"
   File.open("#{path_to_archive}/#{filename}") do |file|
     html = Nokogiri::HTML(file)
-    name = html.xpath('//div[@class="ui_crumb"]/text()').to_s.force_encoding(input_encoding).encode(output_encoding)
-    puts "peer: #{name}"
+    unless peer_name
+      peer_name = html.css('div[class=ui_crumb]').text
+      puts "peer name: #{peer_name}"
+    end
 
     html.css('div[class=attachment]').each do |div|
       description = div.css('div[class=attachment__description]')[0].text
