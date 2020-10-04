@@ -10,7 +10,7 @@ def help
   abort 'usage: <peer-id>'
 end
 
-help if ARGV.empty?
+help if ARGV.empty? || ARGV.include?('--help')
 
 peer_id = ARGV[0]
 abort "invalid id: #{peer_id}".red if peer_id.to_i.zero?
