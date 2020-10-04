@@ -8,13 +8,19 @@ require 'colorize'
 require_relative 'filename_helpers'
 
 def help
-  abort 'usage: <peer-id>'
+  abort '''usage: <peer-id> [--dry-run] [--print]
+  --dry-run: simulate, do not download
+  --print: print links if possible
+  '''
 end
 
 help if ARGV.empty? || ARGV.include?('--help')
 
 peer_id = ARGV[0]
 abort "invalid id: #{peer_id}".red if peer_id.to_i.zero?
+
+print_links = ARGV.include?('--print')
+dry_run = ARGV.include?('--dry-run')
 
 path_to_archive = 'Archive'
 path_to_messages = "#{path_to_archive}/messages"
@@ -35,12 +41,22 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
   File.open("#{path_to_peer}/#{filename}") do |file|
     html = Nokogiri::HTML(file)
     html.css('div[class=attachment]').each do |div|
-      description = div.css('div[class=attachment__description]')[0].text
-      next puts "skipping #{description}".yellow unless allowed_attachment_descriptions.include?(description)
+      description = div.css('div[class=attachment__description]').first.text
+      link_element = div.css('a[class=attachment__link]')
+      link = if link_element.empty?
+               nil
+             else
+               link_element.first['href']
+             end
 
-      link = div.css('a[class=attachment__link]')[0]['href']
+      link_postfix = "#{": #{link}" if link && print_links}"
+      unless allowed_attachment_descriptions.include?(description)
+        next puts "skipping #{description}#{link_postfix}".colorize(link ? :yellow : :red)
+      end
 
-      puts "downloading #{description}"
+      puts "downloading #{description}#{link_postfix}"
+      next if dry_run
+
       response = HTTP.get(link)
       if response.status.success?
         downloaded_filename = link.split('/').last
