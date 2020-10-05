@@ -63,16 +63,22 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
       puts "downloading #{description}#{link_postfix}"
       next if dry_run
 
-      response = HTTP.get(link)
-      if response.status.success?
-        downloaded_filename = link.split('/').last
-        download_dir = "download/#{peer_id} #{peer_name}"
-        FileUtils.mkdir_p(download_dir)
-        File.open("#{download_dir}/#{downloaded_filename}", 'w') do |downloaded_file|
-          downloaded_file.write(response.body)
+      begin
+        response = HTTP.get(link)
+        if response.status.success?
+          downloaded_filename = link.split('/').last
+          download_dir = "download/#{peer_id} #{peer_name}"
+          FileUtils.mkdir_p(download_dir)
+          File.open("#{download_dir}/#{downloaded_filename}", 'w') do |downloaded_file|
+            downloaded_file.write(response.body)
+          end
+        else
+          puts "failed to download: #{link}".red
         end
-      else
-        puts "failed to download: #{link}".red
+      rescue HTTP::Request::UnsupportedSchemeError => e
+        puts "failed to download #{link}: #{e}".red
+      rescue e
+        puts "unknown error: #{e}".red
       end
     end
   end
