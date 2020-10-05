@@ -41,6 +41,12 @@ abort "failed to determine peer name for #{peer_id}".red unless peer_name
 
 allowed_attachment_descriptions = ['Фотография']
 
+statistics = {
+  downloaded: 0,
+  skipped: 0,
+  failed: 0
+}
+
 path_to_peer = "#{path_to_messages}/#{peer_id}"
 Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename|
   puts "reading page #{filename_to_page(filename)} (messages: #{filename_to_message_numbers(filename)})"
@@ -57,6 +63,7 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
 
       link_postfix = "#{": #{link}" if link && print_links}"
       unless allowed_attachment_descriptions.include?(description)
+        statistics[:skipped] += 1
         next puts "skipping #{description}#{link_postfix}".colorize(link ? :yellow : :red)
       end
 
@@ -72,8 +79,10 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
           File.open("#{download_dir}/#{downloaded_filename}", 'w') do |downloaded_file|
             downloaded_file.write(response.body)
           end
+          statistics[:downloaded] += 1
         else
           puts "failed to download: #{link}".red
+          statistics[:failed] += 1
         end
       rescue HTTP::Request::UnsupportedSchemeError => e
         puts "failed to download #{link}: #{e}".red
@@ -83,3 +92,5 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
     end
   end
 end
+
+puts "total: #{statistics}"
