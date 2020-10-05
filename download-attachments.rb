@@ -8,9 +8,10 @@ require 'colorize'
 require_relative 'filename_helpers'
 
 def help
-  abort '''usage: <peer-id> [--dry-run] [--print]
+  abort '''usage: <peer-id> [--dry-run] [--print] [--order]
   --dry-run: simulate, do not download
   --print: print links if possible
+  --order: prepend sequence number to filename
   '''
 end
 
@@ -21,6 +22,7 @@ abort "invalid id: #{peer_id}".red if peer_id.to_i.zero?
 
 print_links = ARGV.include?('--print')
 dry_run = ARGV.include?('--dry-run')
+order = ARGV.include?('--order')
 
 path_to_archive = 'Archive'
 path_to_messages = "#{path_to_archive}/messages"
@@ -73,7 +75,7 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
       begin
         response = HTTP.get(link)
         if response.status.success?
-          downloaded_filename = link.split('/').last
+          downloaded_filename = "#{"#{statistics[:downloaded] + 1}_" if order}#{link.split('/').last}"
           download_dir = "download/#{peer_id} #{peer_name}"
           FileUtils.mkdir_p(download_dir)
           File.open("#{download_dir}/#{downloaded_filename}", 'w') do |downloaded_file|
