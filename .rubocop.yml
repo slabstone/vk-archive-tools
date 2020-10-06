@@ -14,3 +14,6 @@ AllCops:
 
 Layout/EndOfLine:
   Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false

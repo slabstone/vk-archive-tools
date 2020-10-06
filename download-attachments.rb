@@ -8,11 +8,10 @@ require 'colorize'
 require_relative 'filename_helpers'
 
 def help
-  abort '''usage: <peer-id> [--dry-run] [--print] [--order]
+  abort 'usage: <peer-id> [--dry-run] [--print] [--order]
   --dry-run: simulate, do not download
   --print: print links if possible
-  --order: prepend sequence number to filename
-  '''
+  --order: prepend sequence number to filename'
 end
 
 help if ARGV.empty? || ARGV.include?('--help')
@@ -63,7 +62,7 @@ Dir.children(path_to_peer).sort_by { |s| filename_to_page(s) }.each do |filename
                link_element.first['href']
              end
 
-      link_postfix = "#{": #{link}" if link && print_links}"
+      link_postfix = ": #{link}" if link && print_links
       unless allowed_attachment_descriptions.include?(description)
         statistics[:skipped] += 1
         next puts "skipping #{description}#{link_postfix}".colorize(link ? :yellow : :red)
